@@ -20,6 +20,8 @@ services:
     depends_on:
       database:
         condition: service_healthy
+      database_test:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     networks:
@@ -114,8 +116,35 @@ services:
     networks:
       - workout_network
 
+  # ─────────────────────────────────────────────
+  # PostgreSQL 16 — test database (isolated from dev data)
+  # Same image, separate volume, different port to avoid conflicts.
+  # Used exclusively by `make test` — never touched by the running app.
+  # ─────────────────────────────────────────────
+  database_test:
+    image: postgres:16-alpine
+    container_name: workout_db_test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: workout_plan_manager_test
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432"        # Different host port — connect via localhost:5433 if needed
+    volumes:
+      - db_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "workout_plan_manager_test", "-U", "${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - workout_network
+
 volumes:
   db_data:
+  db_test_data:
 
 networks:
   workout_network:

@@ -83,6 +83,20 @@ console:
 	$(DC) exec app php bin/console $(CMD)
 
 # ─────────────────────────────────────────────
+# Test database
+# ─────────────────────────────────────────────
+
+## Create the test database schema (run once after first `make up`)
+test-db-create:
+	$(DC) exec app php bin/console doctrine:database:create --env=test --if-not-exists
+	$(DC) exec app php bin/console doctrine:schema:create --env=test
+
+## Drop and recreate the test database schema (useful after entity changes)
+test-db-reset:
+	$(DC) exec app php bin/console doctrine:schema:drop --env=test --force --full-database
+	$(DC) exec app php bin/console doctrine:schema:create --env=test
+
+# ─────────────────────────────────────────────
 # Code quality
 # ─────────────────────────────────────────────
 
@@ -92,6 +106,10 @@ composer-install:
 
 ## Run PHPUnit tests
 test:
-	$(DC) exec app php bin/phpunit
+	$(DC) exec app php bin/phpunit --testdox
 
-.PHONY: up down stop restart ps logs logs-app logs-db bash psql migrate migration-status migration-diff cache-clear console composer-install test
+## Run PHPUnit tests for a specific file or filter — usage: make test-filter FILTER="UserApi"
+test-filter:
+	$(DC) exec app php bin/phpunit --testdox --filter=$(FILTER)
+
+.PHONY: up down stop restart ps logs logs-app logs-db bash psql migrate migration-status migration-diff cache-clear console composer-install test test-filter test-db-create test-db-reset
