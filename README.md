@@ -161,3 +161,29 @@ symfony server:start
 ## Development Log
 
 All development steps are tracked in [`instructions.md`](./instructions.md).
+
+---
+
+## API Endpoints
+
+### Users
+| Method | URL | Description |
+|--------|-----|-------------|
+| `GET` | `/api/users` | List all users |
+| `GET` | `/api/users/{id}` | Get user by ID |
+| `POST` | `/api/users` | Create user |
+| `PUT` | `/api/users/{id}` | Update user |
+| `DELETE` | `/api/users/{id}` | Delete user |
+
+### Workout Plans
+| Method | URL | Description |
+|--------|-----|-------------|
+| `GET` | `/api/workout-plans` | List all plans |
+| `GET` | `/api/workout-plans/{id}` | Get plan with days + exercises |
+| `POST` | `/api/workout-plans` | Create plan (nested days + exercises) |
+| `PUT` | `/api/workout-plans/{id}` | Replace plan |
+| `DELETE` | `/api/workout-plans/{id}` | Delete plan |
+| `POST` | `/api/workout-plans/{planId}/assign/{userId}` | Assign user to plan |
+| `DELETE` | `/api/workout-plans/{planId}/assign/{userId}` | Unassign user |
+
+Swagger UI: **http://localhost:8080/api/doc**
