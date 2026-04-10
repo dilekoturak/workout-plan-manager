@@ -19,11 +19,6 @@ const router = createRouter({
       name: 'workout-plans',
       component: () => import('../workout-plans/WorkoutPlansView.vue'),
     },
-    {
-      path: '/workout-plans/:id',
-      name: 'plan-detail',
-      component: () => import('../workout-plans/PlanDetailView.vue'),
-    },
   ],
 })
 

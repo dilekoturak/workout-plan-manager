@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
-import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { Plus, Pencil, Trash2, Loader2, Dumbbell, CalendarDays, Zap } from 'lucide-vue-next'
 import {
@@ -29,7 +28,6 @@ import PlanSheet from './PlanSheet.vue'
 import type { WorkoutPlan } from './types'
 
 const queryClient = useQueryClient()
-const router = useRouter()
 
 // ── Sheet state ────────────────────────────────────────────
 const sheetOpen = ref(false)
@@ -112,7 +110,7 @@ const { mutate: deletePlan, isPending: isDeleting } = useMutation({
         v-for="plan in plans"
         :key="plan.id"
         class="flex flex-col cursor-pointer transition-shadow hover:shadow-md"
-        @click="router.push(`/workout-plans/${plan.id}`)"
+        @click="openEdit(plan)"
       >
         <CardHeader class="pb-2">
           <CardTitle class="text-base">{{ plan.name }}</CardTitle>
