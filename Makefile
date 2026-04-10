@@ -66,6 +66,10 @@ psql:
 migrate:
 	$(DC) exec app php bin/console doctrine:migrations:migrate --no-interaction
 
+## Load dev fixtures (drops existing data first — dev only!)
+fixtures:
+	$(DC) exec app php bin/console doctrine:fixtures:load --no-interaction
+
 ## Show migration status
 migration-status:
 	$(DC) exec app php bin/console doctrine:migrations:status
@@ -112,4 +116,4 @@ test:
 test-filter:
 	$(DC) exec app php bin/phpunit --testdox --filter=$(FILTER)
 
-.PHONY: up down stop restart ps logs logs-app logs-db bash psql migrate migration-status migration-diff cache-clear console composer-install test test-filter test-db-create test-db-reset
+.PHONY: up down stop restart ps logs logs-app logs-db bash psql migrate fixtures migration-status migration-diff cache-clear console composer-install test test-filter test-db-create test-db-reset
