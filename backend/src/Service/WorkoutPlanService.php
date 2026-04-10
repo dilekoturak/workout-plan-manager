@@ -163,6 +163,14 @@ class WorkoutPlanService
         return $assignment;
     }
 
+    // Returns all users assigned to a given plan.
+    /** @return UserWorkoutPlan[] */
+    public function getAssignedUsers(string $planId): array
+    {
+        $plan = $this->findOne($planId);
+        return $this->userWorkoutPlanRepository->findByWorkoutPlan($plan);
+    }
+
     // Removes a user assignment from a plan.
     public function unassignUser(string $planId, string $userId): void
     {

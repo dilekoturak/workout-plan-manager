@@ -90,6 +90,26 @@ class WorkoutPlanController extends AbstractController
 
     // ─── User assignment endpoints ───────────────────────────────────────────
 
+    #[Route('/{id}/users', name: 'list_users', methods: ['GET'])]
+    public function listUsers(string $id): JsonResponse
+    {
+        try {
+            $assignments = $this->workoutPlanService->getAssignedUsers($id);
+        } catch (WorkoutPlanNotFoundException $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
+        }
+
+        $result = array_map(fn($a) => [
+            'userId'     => $a->getUser()->getId(),
+            'firstName'  => $a->getUser()->getFirstName(),
+            'lastName'   => $a->getUser()->getLastName(),
+            'email'      => $a->getUser()->getEmail(),
+            'assignedAt' => $a->getAssignedAt()->format(\DateTimeInterface::ATOM),
+        ], $assignments);
+
+        return $this->json($result, Response::HTTP_OK);
+    }
+
     #[Route('/{planId}/assign/{userId}', name: 'assign_user', methods: ['POST'])]
     public function assignUser(string $planId, string $userId): JsonResponse
     {
