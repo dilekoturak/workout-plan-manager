@@ -17,15 +17,41 @@ A full-stack workout plan management application built with **Symfony 7** (REST 
 
 ## Tech Stack
 
-| Layer      | Technology                          |
-|------------|-------------------------------------|
-| Backend    | PHP 8.4, Symfony 7.2                |
-| Database   | PostgreSQL 16                       |
-| ORM        | Doctrine ORM 3 + Migrations         |
-| Validation | Symfony Validator (PHP Attributes)  |
-| Serializer | Symfony Serializer                  |
-| CORS       | NelmioCorsBundle                    |
-| Frontend   | Vue 3 *(coming soon)*               |
+| Layer          | Technology                          |
+|----------------|-------------------------------------|
+| Backend        | PHP 8.4, Symfony 7.2                |
+| Database       | PostgreSQL 16                       |
+| ORM            | Doctrine ORM 3 + Migrations         |
+| Validation     | Symfony Validator (PHP Attributes)  |
+| Serializer     | Symfony Serializer                  |
+| CORS           | NelmioCorsBundle                    |
+| Web Server     | Nginx 1.27 (reverse proxy)          |
+| Containerization | Docker, Docker Compose            |
+| Frontend       | Vue 3 *(coming soon)*               |
+
+---
+
+## Project Structure
+
+```
+workout-plan-manager/
+├── docker-compose.yml          # Orchestrates all services (app, nginx, database)
+├── Makefile                    # Developer shortcuts (make up, make migrate, etc.)
+├── .env.example                # Safe template for Docker Compose env vars
+├── docker/
+│   └── nginx/
+│       └── default.conf        # Nginx reverse proxy configuration
+├── backend/
+│   ├── Dockerfile              # Multi-stage PHP 8.4-fpm image (dev + prod)
+│   └── src/
+│       ├── Controller/         # HTTP layer
+│       ├── Service/            # Business logic layer
+│       ├── Entity/             # Doctrine ORM entities
+│       ├── Repository/         # Data access layer
+│       ├── DTO/                # Request / Response shaping
+│       └── Exception/          # Domain exceptions
+└── frontend/                   # Vue 3 app (coming soon)
+```
 
 ---
 
@@ -57,35 +83,48 @@ backend/
 
 ### Prerequisites
 
-- PHP 8.4+
-- Composer 2+
-- PostgreSQL 16+
-- Symfony CLI
+- Docker & Docker Compose
 
 ### Setup
 
 ```bash
+# 1. Clone the repository
+git clone https://github.com/dilekoturak/workout-plan-manager.git
+cd workout-plan-manager
+
+# 2. Create your local env file from the template
+cp .env.example .env
+# Edit .env and set your POSTGRES_PASSWORD
+
+# 3. Build and start all containers
+make up
+
+# 4. Run database migrations
+make migrate
+```
+
+The API will be available at **http://localhost:8080**.
+
+### Useful Commands
+
+```bash
+make logs          # Stream all container logs
+make bash          # Shell into the PHP container
+make migrate       # Run pending migrations
+make cache-clear   # Clear Symfony cache
+make down          # Stop all containers
+```
+
+### Local Development (without Docker)
+
+```bash
 cd backend
-composer install
-```
-
-Copy `.env` and update the database credentials:
-
-```bash
 cp .env .env.local
-# Edit DATABASE_URL in .env.local
-```
+# Edit .env.local — set DATABASE_URL to point to your local PostgreSQL
 
-Create the database and run migrations:
-
-```bash
+composer install
 php bin/console doctrine:database:create
 php bin/console doctrine:migrations:migrate
-```
-
-Start the development server:
-
-```bash
 symfony server:start
 ```
 

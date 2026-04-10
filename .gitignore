@@ -1,6 +1,9 @@
 # Project-level sensitive / private files
 instructions.md
-.env.local
+
+# Root-level Docker Compose env — contains real credentials, never commit this
+.env
+# .env.example is committed intentionally as a safe template
 
 # OS
 .DS_Store
