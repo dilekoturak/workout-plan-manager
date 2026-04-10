@@ -10,12 +10,19 @@ RUN apk add --no-cache \
         libpq-dev \
         icu-dev \
         oniguruma-dev \
+        rabbitmq-c-dev \
+        autoconf \
+        g++ \
+        make \
     && docker-php-ext-install \
         pdo \
         pdo_pgsql \
         intl \
         opcache \
-        mbstring
+        mbstring \
+    && pecl install amqp \
+    && docker-php-ext-enable amqp \
+    && apk del autoconf g++ make
 
 # Install Composer (copied from the official Composer image — no extra download needed)
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

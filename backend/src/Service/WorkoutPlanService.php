@@ -10,18 +10,23 @@ use App\Entity\WorkoutPlan;
 use App\Exception\UserAlreadyAssignedException;
 use App\Exception\UserNotFoundException;
 use App\Exception\WorkoutPlanNotFoundException;
+use App\Message\PlanDeletedMessage;
+use App\Message\PlanModifiedMessage;
+use App\Message\UserAssignedMessage;
 use App\Repository\UserRepository;
 use App\Repository\UserWorkoutPlanRepository;
 use App\Repository\WorkoutPlanRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class WorkoutPlanService
 {
     public function __construct(
-        private readonly WorkoutPlanRepository    $workoutPlanRepository,
-        private readonly UserRepository           $userRepository,
+        private readonly WorkoutPlanRepository     $workoutPlanRepository,
+        private readonly UserRepository            $userRepository,
         private readonly UserWorkoutPlanRepository $userWorkoutPlanRepository,
-        private readonly EntityManagerInterface   $entityManager,
+        private readonly EntityManagerInterface    $entityManager,
+        private readonly MessageBusInterface       $bus,
     ) {}
 
     /** @return WorkoutPlan[] */
@@ -100,21 +105,33 @@ class WorkoutPlanService
 
         $this->entityManager->flush();
 
-        // TODO: notify assigned users by email (Step 6)
+        // Dispatch a message to RabbitMQ — the worker picks it up and sends emails to all assigned users
+        $this->bus->dispatch(new PlanModifiedMessage($plan->getId()));
 
         return $plan;
     }
 
-    // On delete: all assigned users must be notified before the plan is removed.
-    // Mail step will hook in here later.
+    // On delete: collect assigned user emails before removing, then notify them asynchronously.
     public function delete(string $id): void
     {
         $plan = $this->findOne($id);
 
-        // TODO: notify assigned users by email before deletion (Step 6)
+        // Collect emails before deletion — the plan won't exist when the worker runs
+        $assignments = $this->userWorkoutPlanRepository->findByWorkoutPlan($plan);
+        $userEmails  = array_map(
+            fn(UserWorkoutPlan $a) => $a->getUser()->getEmail(),
+            $assignments
+        );
+
+        $planName = $plan->getName();
 
         $this->entityManager->remove($plan);
         $this->entityManager->flush();
+
+        // Dispatch deletion notification — user emails and plan name are embedded in the message
+        if (!empty($userEmails)) {
+            $this->bus->dispatch(new PlanDeletedMessage($planName, $userEmails));
+        }
     }
 
     // Assigns a user to a plan. Throws if already assigned.
@@ -140,7 +157,8 @@ class WorkoutPlanService
         $this->entityManager->persist($assignment);
         $this->entityManager->flush();
 
-        // TODO: send assignment confirmation email to user (Step 6)
+        // Dispatch assignment confirmation email — the worker sends it asynchronously
+        $this->bus->dispatch(new UserAssignedMessage($user->getId(), $plan->getId()));
 
         return $assignment;
     }

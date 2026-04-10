@@ -7,17 +7,69 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      target: dev          # Switch to "prod" for production builds
+      target: dev
     container_name: workout_app
     restart: unless-stopped
     volumes:
-      - ./backend:/app     # Live code reload in development
+      - ./backend:/app
     environment:
       APP_ENV: dev
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?serverVersion=16&charset=utf8
+      MESSENGER_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f/messages
+      MAILER_DSN: ${MAILER_DSN}
     depends_on:
       database:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - workout_network
+
+  # ─────────────────────────────────────────────
+  # Symfony Messenger worker
+  # Consumes messages from RabbitMQ and sends emails.
+  # Runs as a separate long-lived process — keeps the HTTP app fast.
+  # ─────────────────────────────────────────────
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: workout_worker
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?serverVersion=16&charset=utf8
+      MESSENGER_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f/messages
+      MAILER_DSN: ${MAILER_DSN}
+    # This is the only difference from the app container: it runs the messenger consumer, not php-fpm
+    command: php bin/console messenger:consume async --time-limit=3600 -vv
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - workout_network
+
+  # ─────────────────────────────────────────────
+  # RabbitMQ message broker
+  # ─────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: workout_rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"    # AMQP port (used by the app)
+      - "15672:15672"  # Management UI — http://localhost:15672 (guest/guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - workout_network
 
