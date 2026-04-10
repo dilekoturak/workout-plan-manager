@@ -15,7 +15,7 @@ export interface WorkoutDay {
 export interface WorkoutPlan {
   id: string
   name: string
-  days: WorkoutDay[]
+  workoutDays: WorkoutDay[]
   createdAt: string
   updatedAt: string
 }
