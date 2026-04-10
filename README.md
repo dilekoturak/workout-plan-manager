@@ -27,7 +27,11 @@ A full-stack workout plan management application built with **Symfony 7** (REST 
 | CORS           | NelmioCorsBundle                    |
 | Web Server     | Nginx 1.27 (reverse proxy)          |
 | Containerization | Docker, Docker Compose            |
-| Frontend       | Vue 3 *(coming soon)*               |
+| Frontend       | Vue 3, Vite, TypeScript             |
+| State Management | Pinia                             |
+| UI Components  | shadcn-vue + Tailwind CSS           |
+| HTTP Client    | Axios                               |
+| Icons          | lucide-vue-next                     |
 
 ---
 
@@ -50,7 +54,18 @@ workout-plan-manager/
 │       ├── Repository/         # Data access layer
 │       ├── DTO/                # Request / Response shaping
 │       └── Exception/          # Domain exceptions
-└── frontend/                   # Vue 3 app (coming soon)
+└── frontend/                   # Vue 3 SPA
+    └── src/
+        ├── users/              # Users domain (view, types, api, store)
+        ├── workout-plans/      # Workout Plans domain (view, detail, types, api, store)
+        ├── shared/             # Cross-domain utilities
+        │   ├── components/
+        │   │   └── layout/     # AppLayout, Navbar
+        │   ├── api/            # Axios client
+        │   └── types/          # Shared TypeScript types
+        ├── components/
+        │   └── ui/             # shadcn-vue components (untouched)
+        └── router/
 ```
 
 ---
@@ -105,12 +120,24 @@ make migrate
 
 The API will be available at **http://localhost:8080**.
 
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will be available at **http://localhost:5173**.
+
 ### Useful Commands
 
 ```bash
 make logs          # Stream all container logs
 make bash          # Shell into the PHP container
 make migrate       # Run pending migrations
+make fixtures      # Load dev seed data (Alice, Bob, Carol + 3 plans)
+make test          # Run all PHPUnit tests
 make cache-clear   # Clear Symfony cache
 make down          # Stop all containers
 ```
