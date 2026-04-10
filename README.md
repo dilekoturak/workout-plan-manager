@@ -31,6 +31,7 @@ A full-stack workout plan management application built with **Symfony 7** (REST 
 | State Management | Pinia                             |
 | UI Components  | shadcn-vue + Tailwind CSS           |
 | HTTP Client    | Axios                               |
+| Server State   | TanStack Query (vue-query)          |
 | Icons          | lucide-vue-next                     |
 
 ---
