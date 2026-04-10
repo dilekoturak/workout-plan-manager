@@ -139,7 +139,7 @@ const { mutate: deleteUser, isPending: isDeleting } = useMutation({
   <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle>Delete user?</AlertDialogTitle>
+        <AlertDialogTitle class="text-foreground">Delete user?</AlertDialogTitle>
         <AlertDialogDescription>
           This will permanently delete
           <span class="font-medium">{{ userToDelete?.firstName }} {{ userToDelete?.lastName }}</span>
@@ -149,7 +149,7 @@ const { mutate: deleteUser, isPending: isDeleting } = useMutation({
       <AlertDialogFooter>
         <AlertDialogCancel>Cancel</AlertDialogCancel>
         <AlertDialogAction
-          class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          class="bg-primary text-primary-foreground hover:bg-primary/90"
           :disabled="isDeleting"
           @click="userToDelete && deleteUser(userToDelete.id)"
         >
