@@ -6,6 +6,7 @@ use App\Repository\WorkoutPlanRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: WorkoutPlanRepository::class)]
@@ -17,21 +18,26 @@ class WorkoutPlan
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
     #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
     #[ORM\Column(type: 'uuid', unique: true)]
+    #[Groups(['workout_plan:read'])]
     private ?string $id = null;
 
     #[ORM\Column(length: 150)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 150)]
+    #[Groups(['workout_plan:read'])]
     private string $name;
 
     #[ORM\Column]
+    #[Groups(['workout_plan:read'])]
     private \DateTimeImmutable $createdAt;
 
     #[ORM\Column]
+    #[Groups(['workout_plan:read'])]
     private \DateTimeImmutable $updatedAt;
 
     // A plan is composed of multiple days (e.g. Monday, Wednesday, Friday)
     #[ORM\OneToMany(targetEntity: WorkoutDay::class, mappedBy: 'workoutPlan', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(['workout_plan:read'])]
     private Collection $workoutDays;
 
     // Tracks which users are assigned to this plan
