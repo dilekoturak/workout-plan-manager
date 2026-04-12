@@ -15,7 +15,7 @@ services:
     environment:
       APP_ENV: dev
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?serverVersion=16&charset=utf8
-      MESSENGER_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f/messages
+      MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN}
       MAILER_DSN: ${MAILER_DSN}
     depends_on:
       database:
@@ -44,7 +44,7 @@ services:
     environment:
       APP_ENV: dev
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?serverVersion=16&charset=utf8
-      MESSENGER_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f/messages
+      MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN}
       MAILER_DSN: ${MAILER_DSN}
     # This is the only difference from the app container: it runs the messenger consumer, not php-fpm
     command: php bin/console messenger:consume async --time-limit=3600 -vv

@@ -2,7 +2,7 @@
 instructions.md
 
 # Root-level Docker Compose env — contains real credentials, never commit this
-.env
+/.env
 # .env.example is committed intentionally as a safe template
 
 # OS
