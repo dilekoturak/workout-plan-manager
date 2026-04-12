@@ -28,7 +28,7 @@ A full-stack workout plan management application built with **Symfony 7** (REST 
 | Web Server     | Nginx 1.27 (reverse proxy)          |
 | Containerization | Docker, Docker Compose            |
 | Frontend       | Vue 3, Vite, TypeScript             |
-| State Management | Pinia                             |
+| Form Validation | vee-validate + Zod                 |
 | UI Components  | shadcn-vue + Tailwind CSS           |
 | HTTP Client    | Axios                               |
 | Server State   | TanStack Query (vue-query)          |
