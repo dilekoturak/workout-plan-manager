@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useForm, useFieldArray } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
+import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { toast } from 'vue-sonner'
 import { Plus, Trash2, Loader2, UserPlus, UserMinus } from 'lucide-vue-next'
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter,
 } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -19,125 +17,130 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { workoutPlanApi } from './workoutPlanApi'
 import { userApi } from '@/users/userApi'
-import type { WorkoutPlan, CreateWorkoutPlanPayload } from './types'
+import type { WorkoutPlan } from './types'
 
-const props = defineProps<{
-  open: boolean
-  plan?: WorkoutPlan | null
-}>()
+// ── Props / Emits ───────────────────────────────────────────
+const props = defineProps<{ open: boolean; plan?: WorkoutPlan | null }>()
+const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 
-const emit = defineEmits<{
-  'update:open': [value: boolean]
-}>()
-
-const queryClient = useQueryClient()
-
-// ── Form state ──────────────────────────────────────────────
-type ExerciseForm = { name: string; sets: string; reps: string; notes: string }
-type DayForm = { name: string; exercises: ExerciseForm[] }
-
-const planName = ref('')
-const days = ref<DayForm[]>([])
-const errors = ref<Record<string, string>>({})
+const isEditing = computed(() => !!props.plan)
 const activeTab = ref('plan')
 
-function emptyExercise(): ExerciseForm {
-  return { name: '', sets: '', reps: '', notes: '' }
+// ── Zod schema ──────────────────────────────────────────────
+const exerciseSchema = z.object({
+  name: z.string().min(1, 'Exercise name is required.'),
+  sets: z.string().optional(),
+  reps: z.string().optional(),
+  notes: z.string().optional(),
+})
+
+const daySchema = z.object({
+  name: z.string().min(1, 'Day name is required.'),
+  exercises: z.array(exerciseSchema).min(1, 'At least one exercise is required.'),
+})
+
+const planSchema = z.object({
+  planName: z.string().min(1, 'Plan name is required.'),
+  days: z.array(daySchema).min(1, 'At least one day is required.'),
+})
+
+// ── Types ────────────────────────────────────────────────────
+type ExerciseEntry = { name: string; sets?: string; reps?: string; notes?: string }
+type DayEntry = { name: string; exercises: ExerciseEntry[] }
+
+// ── Form ────────────────────────────────────────────────────
+const { handleSubmit, errors, resetForm, defineField } = useForm({
+  validationSchema: toTypedSchema(planSchema),
+})
+
+const [planName, planNameAttrs] = defineField('planName')
+const { fields: days, push: pushDay, remove: removeDay } = useFieldArray<DayEntry>('days')
+
+function addDay() {
+  pushDay({ name: '', exercises: [{ name: '', sets: '', reps: '', notes: '' }] })
 }
 
-function emptyDay(): DayForm {
-  return { name: '', exercises: [emptyExercise()] }
+function addExercise(dayIndex: number) {
+  const day = days.value[dayIndex]
+  if (day) day.value.exercises.push({ name: '', sets: '', reps: '', notes: '' })
 }
 
-watch(
-  () => props.open,
-  (open) => {
-    if (open) activeTab.value = 'plan'
-  },
-)
+function removeExercise(dayIndex: number, exIndex: number) {
+  const day = days.value[dayIndex]
+  if (day) day.value.exercises.splice(exIndex, 1)
+}
 
-watch(
-  () => props.plan,
-  (p) => {
-    if (p) {
-      planName.value = p.name
-      days.value = p.workoutDays.map(d => ({
-        name: d.name,
-        exercises: d.exercises.map(e => ({
-          name: e.name,
-          sets: e.sets?.toString() ?? '',
-          reps: e.reps?.toString() ?? '',
-          notes: e.notes ?? '',
+function populateForm(p: WorkoutPlan | null | undefined) {
+  if (p) {
+    resetForm({
+      values: {
+        planName: p.name,
+        days: p.workoutDays.map(d => ({
+          name: d.name,
+          exercises: d.exercises.map(e => ({
+            name: e.name,
+            sets: e.sets?.toString() ?? '',
+            reps: e.reps?.toString() ?? '',
+            notes: e.notes ?? '',
+          })),
         })),
-      }))
-    } else {
-      planName.value = ''
-      days.value = [emptyDay()]
-    }
-    errors.value = {}
-  },
-  { immediate: true },
-)
-
-const isEditing = () => !!props.plan
-
-// ── Day / Exercise helpers ──────────────────────────────────
-function addDay() { days.value.push(emptyDay()) }
-function removeDay(di: number) { days.value.splice(di, 1) }
-function addExercise(di: number) { days.value[di]?.exercises.push(emptyExercise()) }
-function removeExercise(di: number, ei: number) { days.value[di]?.exercises.splice(ei, 1) }
-
-// ── Validation ──────────────────────────────────────────────
-function validate(): boolean {
-  const e: Record<string, string> = {}
-  if (!planName.value.trim()) e.planName = 'Plan name is required.'
-  if (days.value.length === 0) e.days = 'At least one day is required.'
-  days.value.forEach((d, di) => {
-    if (!d.name.trim()) e[`day_${di}_name`] = 'Day name is required.'
-    if (d.exercises.length === 0) e[`day_${di}_exercises`] = 'At least one exercise is required.'
-    d.exercises.forEach((ex, ei) => {
-      if (!ex.name.trim()) e[`day_${di}_ex_${ei}_name`] = 'Exercise name is required.'
+      },
     })
-  })
-  errors.value = e
-  return Object.keys(e).length === 0
-}
-
-function buildPayload(): CreateWorkoutPlanPayload {
-  return {
-    name: planName.value.trim(),
-    days: days.value.map(d => ({
-      name: d.name.trim(),
-      exercises: d.exercises.map(ex => ({
-        name: ex.name.trim(),
-        sets: ex.sets ? parseInt(ex.sets) : null,
-        reps: ex.reps ? parseInt(ex.reps) : null,
-        notes: ex.notes.trim() || null,
-      })),
-    })),
+  } else {
+    resetForm({
+      values: {
+        planName: '',
+        days: [{ name: '', exercises: [{ name: '', sets: '', reps: '', notes: '' }] }],
+      },
+    })
   }
 }
 
+// Reset form every time the sheet opens
+watch(() => props.open, (open) => {
+  if (open) {
+    activeTab.value = 'plan'
+    populateForm(props.plan)
+  }
+})
+
+// Initial populate when sheet is closed
+watch(() => props.plan, (p) => {
+  if (!props.open) populateForm(p)
+}, { immediate: true })
+
 // ── Plan mutation ───────────────────────────────────────────
-const { mutate: save, isPending } = useMutation({
-  mutationFn: (payload: CreateWorkoutPlanPayload) =>
-    isEditing()
+const queryClient = useQueryClient()
+
+const { mutate: savePlan, isPending } = useMutation({
+  mutationFn: (values: z.infer<typeof planSchema>) => {
+    const payload = {
+      name: values.planName.trim(),
+      days: values.days.map(d => ({
+        name: d.name.trim(),
+        exercises: d.exercises.map(ex => ({
+          name: ex.name.trim(),
+          sets: ex.sets ? parseInt(ex.sets) : null,
+          reps: ex.reps ? parseInt(ex.reps) : null,
+          notes: ex.notes?.trim() || null,
+        })),
+      })),
+    }
+    return isEditing.value
       ? workoutPlanApi.update(props.plan!.id, payload)
-      : workoutPlanApi.create(payload),
+      : workoutPlanApi.create(payload)
+  },
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['workout-plans'] })
-    toast.success(isEditing() ? 'Plan updated.' : 'Plan created.')
+    toast.success(isEditing.value ? 'Plan updated.' : 'Plan created.')
     emit('update:open', false)
   },
   onError: () => toast.error('Something went wrong.'),
 })
 
-function submit() {
-  if (!validate()) return
-  save(buildPayload())
-}
+const submit = handleSubmit((values) => savePlan(values))
 
-// ── Assigned users (only when editing) ─────────────────────
+// ── Assigned users ──────────────────────────────────────────
 const planId = computed(() => props.plan?.id ?? '')
 
 const { data: assignedUsers } = useQuery({
@@ -183,14 +186,14 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
   <Sheet :open="open" @update:open="emit('update:open', $event)">
     <SheetContent class="w-full overflow-y-auto sm:max-w-lg">
       <SheetHeader>
-        <SheetTitle>{{ isEditing() ? plan!.name : 'New Workout Plan' }}</SheetTitle>
+        <SheetTitle>{{ isEditing ? plan!.name : 'New Workout Plan' }}</SheetTitle>
         <SheetDescription>
-          {{ isEditing() ? 'Edit plan details or manage assigned users.' : 'Create a plan with days and exercises.' }}
+          {{ isEditing ? 'Edit plan details or manage assigned users.' : 'Create a plan with days and exercises.' }}
         </SheetDescription>
       </SheetHeader>
 
       <Tabs v-model="activeTab" class="px-4 pt-4">
-        <TabsList :class="isEditing() ? 'w-full' : 'hidden'">
+        <TabsList :class="isEditing ? 'w-full' : 'hidden'">
           <TabsTrigger value="plan" class="flex-1">Plan Details</TabsTrigger>
           <TabsTrigger value="users" class="flex-1">Assigned Users</TabsTrigger>
         </TabsList>
@@ -199,14 +202,16 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
         <TabsContent value="plan">
           <form class="flex flex-col gap-6 py-4" @submit.prevent="submit">
 
+            <!-- Plan name -->
             <div class="flex flex-col gap-1.5">
               <Label for="planName">Plan Name</Label>
-              <Input id="planName" v-model="planName" placeholder="e.g. Push Pull Legs" />
+              <Input id="planName" v-model="planName" v-bind="planNameAttrs" placeholder="e.g. Push Pull Legs" />
               <p v-if="errors.planName" class="text-sm text-destructive">{{ errors.planName }}</p>
             </div>
 
             <Separator />
 
+            <!-- Days -->
             <div class="flex flex-col gap-4">
               <div class="flex items-center justify-between">
                 <span class="text-sm font-semibold">Days</span>
@@ -216,22 +221,19 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
               </div>
               <p v-if="errors.days" class="text-sm text-destructive">{{ errors.days }}</p>
 
-              <div
-                v-for="(day, di) in days"
-                :key="di"
-                class="rounded-lg border p-4 flex flex-col gap-4"
-              >
+              <div v-for="(day, di) in days" :key="day.key" class="rounded-lg border p-4 flex flex-col gap-4">
+                <!-- Day name -->
                 <div class="flex items-center gap-2">
                   <div class="flex-1 flex flex-col gap-1">
                     <Label :for="`day-${di}`">Day {{ di + 1 }} Name</Label>
-                    <Input :id="`day-${di}`" v-model="day.name" placeholder="e.g. Monday / Push Day" />
-                    <p v-if="errors[`day_${di}_name`]" class="text-sm text-destructive">{{ errors[`day_${di}_name`] }}</p>
+                    <Input :id="`day-${di}`" v-model="day.value.name" placeholder="e.g. Monday / Push Day" />
+                    <p v-if="(errors as any)[`days[${di}].name`]" class="text-sm text-destructive">
+                      {{ (errors as any)[`days[${di}].name`] }}
+                    </p>
                   </div>
                   <Button
                     v-if="days.length > 1"
-                    type="button"
-                    variant="ghost"
-                    size="icon"
+                    type="button" variant="ghost" size="icon"
                     class="mt-5 shrink-0 text-destructive hover:text-destructive"
                     @click="removeDay(di)"
                   >
@@ -239,21 +241,18 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
                   </Button>
                 </div>
 
+                <!-- Exercises -->
                 <div class="flex flex-col gap-3 pl-1">
-                  <p v-if="errors[`day_${di}_exercises`]" class="text-sm text-destructive">{{ errors[`day_${di}_exercises`] }}</p>
-
                   <div
-                    v-for="(ex, ei) in day.exercises"
+                    v-for="(ex, ei) in day.value.exercises"
                     :key="ei"
                     class="flex flex-col gap-2 rounded-md bg-muted/40 p-3"
                   >
                     <div class="flex items-center justify-between">
                       <span class="text-xs font-medium text-muted-foreground">Exercise {{ ei + 1 }}</span>
                       <Button
-                        v-if="day.exercises.length > 1"
-                        type="button"
-                        variant="ghost"
-                        size="icon"
+                        v-if="day.value.exercises.length > 1"
+                        type="button" variant="ghost" size="icon"
                         class="h-6 w-6 text-destructive hover:text-destructive"
                         @click="removeExercise(di, ei)"
                       >
@@ -263,7 +262,9 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
 
                     <div class="flex flex-col gap-1">
                       <Input v-model="ex.name" placeholder="Exercise name *" />
-                      <p v-if="errors[`day_${di}_ex_${ei}_name`]" class="text-xs text-destructive">{{ errors[`day_${di}_ex_${ei}_name`] }}</p>
+                      <p v-if="(errors as any)[`days[${di}].exercises[${ei}].name`]" class="text-xs text-destructive">
+                        {{ (errors as any)[`days[${di}].exercises[${ei}].name`] }}
+                      </p>
                     </div>
 
                     <div class="grid grid-cols-3 gap-2">
@@ -283,7 +284,7 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
             <SheetFooter class="pt-2">
               <Button type="submit" :disabled="isPending" class="w-full">
                 <Loader2 v-if="isPending" class="mr-2 h-4 w-4 animate-spin" />
-                {{ isEditing() ? 'Save Changes' : 'Create Plan' }}
+                {{ isEditing ? 'Save Changes' : 'Create Plan' }}
               </Button>
             </SheetFooter>
           </form>
@@ -292,8 +293,6 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
         <!-- ── Tab 2: Assigned Users ── -->
         <TabsContent value="users">
           <div class="flex flex-col gap-4 py-4">
-
-            <!-- Assign: user selector -->
             <div class="flex flex-col gap-1.5">
               <Label>Assign User</Label>
               <div class="flex gap-2">
@@ -302,38 +301,23 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
                   class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <option value="" disabled>Select a user...</option>
-                  <option
-                    v-for="user in availableUsers"
-                    :key="user.id"
-                    :value="user.id"
-                  >
+                  <option v-for="user in availableUsers" :key="user.id" :value="user.id">
                     {{ user.firstName }} {{ user.lastName }} ({{ user.email }})
                   </option>
                 </select>
-                <Button
-                  type="button"
-                  size="icon"
-                  :disabled="!selectedUserId || isAssigning"
-                  @click="assignUser(selectedUserId)"
-                >
+                <Button type="button" size="icon" :disabled="!selectedUserId || isAssigning" @click="assignUser(selectedUserId)">
                   <UserPlus class="h-4 w-4" />
                 </Button>
               </div>
-              <p v-if="availableUsers.length === 0" class="text-xs text-muted-foreground">
-                All users are already assigned.
-              </p>
+              <p v-if="availableUsers.length === 0" class="text-xs text-muted-foreground">All users are already assigned.</p>
             </div>
 
             <Separator />
 
-            <!-- Assigned list -->
-            <div v-if="!assignedUsers?.length" class="text-sm text-muted-foreground">
-              No users assigned yet.
-            </div>
+            <div v-if="!assignedUsers?.length" class="text-sm text-muted-foreground">No users assigned yet.</div>
             <div v-else class="flex flex-col gap-2">
               <div
-                v-for="user in assignedUsers"
-                :key="user.userId"
+                v-for="user in assignedUsers" :key="user.userId"
                 class="flex items-center justify-between rounded-lg border px-3 py-2"
               >
                 <div>
@@ -341,13 +325,9 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
                   <p class="text-xs text-muted-foreground">{{ user.email }}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                  <Badge variant="outline" class="text-xs">
-                    {{ new Date(user.assignedAt).toLocaleDateString() }}
-                  </Badge>
+                  <Badge variant="outline" class="text-xs">{{ new Date(user.assignedAt).toLocaleDateString() }}</Badge>
                   <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
+                    type="button" variant="ghost" size="icon"
                     class="text-destructive hover:text-destructive shrink-0"
                     :disabled="isUnassigning"
                     @click="unassignUser(user.userId)"
@@ -357,11 +337,9 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
                 </div>
               </div>
             </div>
-
           </div>
         </TabsContent>
       </Tabs>
-
     </SheetContent>
   </Sheet>
 </template>
