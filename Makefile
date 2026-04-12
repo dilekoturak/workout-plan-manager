@@ -10,110 +10,53 @@ DC = docker compose
 # Stack lifecycle
 # ─────────────────────────────────────────────
 
-## Build and start all containers in the background
-up:
+up: ## Build and start all containers
 	$(DC) up -d --build
 
-## Stop and remove all containers
-down:
+down: ## Stop and remove all containers
 	$(DC) down
 
-## Stop containers without removing them
-stop:
-	$(DC) stop
-
-## Restart all containers
-restart:
-	$(DC) restart
-
-## Show running containers
-ps:
+ps: ## Show running containers
 	$(DC) ps
 
 # ─────────────────────────────────────────────
 # Logs
 # ─────────────────────────────────────────────
 
-## Stream logs for all containers
-logs:
+logs: ## Stream logs for all containers
 	$(DC) logs -f
 
-## Stream logs for the app (PHP-FPM) container only
-logs-app:
+logs-app: ## Stream logs for the PHP app container only
 	$(DC) logs -f app
-
-## Stream logs for the database container only
-logs-db:
-	$(DC) logs -f database
 
 # ─────────────────────────────────────────────
 # Shell access
 # ─────────────────────────────────────────────
 
-## Open a shell inside the PHP app container
-bash:
+bash: ## Open a shell inside the PHP container
 	$(DC) exec app sh
-
-## Open a psql session inside the database container
-psql:
-	$(DC) exec database psql -U $${POSTGRES_USER} -d $${POSTGRES_DB}
 
 # ─────────────────────────────────────────────
 # Symfony / Doctrine
 # ─────────────────────────────────────────────
 
-## Run all pending database migrations
-migrate:
+migrate: ## Run all pending database migrations
 	$(DC) exec app php bin/console doctrine:migrations:migrate --no-interaction
 
-## Load dev fixtures (drops existing data first — dev only!)
-fixtures:
+fixtures: ## Load dev seed data (Alice, Bob, Carol + 3 plans)
 	$(DC) exec app php bin/console doctrine:fixtures:load --no-interaction
 
-## Show migration status
-migration-status:
-	$(DC) exec app php bin/console doctrine:migrations:status
-
-## Generate a new blank migration file
-migration-diff:
-	$(DC) exec app php bin/console doctrine:migrations:diff
-
-## Clear Symfony cache
-cache-clear:
+cache-clear: ## Clear Symfony cache
 	$(DC) exec app php bin/console cache:clear
 
-## Run Symfony console command — usage: make console CMD="debug:router"
-console:
-	$(DC) exec app php bin/console $(CMD)
-
 # ─────────────────────────────────────────────
-# Test database
+# Tests
 # ─────────────────────────────────────────────
 
-## Create the test database schema (run once after first `make up`)
-test-db-create:
-	$(DC) exec app php bin/console doctrine:database:create --env=test --if-not-exists
-	$(DC) exec app php bin/console doctrine:schema:create --env=test
-
-## Drop and recreate the test database schema (useful after entity changes)
-test-db-reset:
-	$(DC) exec app php bin/console doctrine:schema:drop --env=test --force --full-database
-	$(DC) exec app php bin/console doctrine:schema:create --env=test
-
-# ─────────────────────────────────────────────
-# Code quality
-# ─────────────────────────────────────────────
-
-## Install Composer dependencies inside the container
-composer-install:
-	$(DC) exec app composer install
-
-## Run PHPUnit tests
-test:
+test: ## Run all PHPUnit tests
 	$(DC) exec app php bin/phpunit --testdox
 
-## Run PHPUnit tests for a specific file or filter — usage: make test-filter FILTER="UserApi"
-test-filter:
+test-filter: ## Run tests matching a filter — usage: make test-filter FILTER="UserApi"
 	$(DC) exec app php bin/phpunit --testdox --filter=$(FILTER)
 
-.PHONY: up down stop restart ps logs logs-app logs-db bash psql migrate fixtures migration-status migration-diff cache-clear console composer-install test test-filter test-db-create test-db-reset
+.PHONY: up down ps logs logs-app bash migrate fixtures cache-clear test test-filter
