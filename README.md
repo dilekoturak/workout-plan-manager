@@ -40,12 +40,12 @@ A full-stack workout plan management application built with **Symfony 7** (REST 
 
 ```
 workout-plan-manager/
-├── docker-compose.yml          # Orchestrates all services (app, nginx, database)
+├── docker-compose.yml          # Orchestrates all services (app, nginx, database, rabbitmq, frontend)
 ├── Makefile                    # Developer shortcuts (make up, make migrate, etc.)
 ├── .env.example                # Safe template for Docker Compose env vars
 ├── docker/
 │   └── nginx/
-│       └── default.conf        # Nginx reverse proxy configuration
+│       └── default.conf        # Nginx reverse proxy configuration (backend)
 ├── backend/
 │   ├── Dockerfile              # Multi-stage PHP 8.4-fpm image (dev + prod)
 │   └── src/
@@ -56,6 +56,8 @@ workout-plan-manager/
 │       ├── DTO/                # Request / Response shaping
 │       └── Exception/          # Domain exceptions
 └── frontend/                   # Vue 3 SPA
+    ├── Dockerfile              # Multi-stage: node:20-alpine build → nginx:alpine serve
+    ├── nginx.conf              # nginx config with Vue Router history mode fallback
     └── src/
         ├── users/              # Users domain (view, types, api, store)
         ├── workout-plans/      # Workout Plans domain (view, detail, types, api, store)
@@ -112,16 +114,18 @@ cd workout-plan-manager
 cp .env.example .env
 # Edit .env and set your POSTGRES_PASSWORD
 
-# 3. Build and start all containers
+# 3. Build and start all containers (backend + frontend + database + rabbitmq)
 make up
 
 # 4. Run database migrations
 make migrate
 ```
 
-The API will be available at **http://localhost:8080**.
+- API → **http://localhost:8080**
+- Frontend → **http://localhost:5173**
+- RabbitMQ UI → **http://localhost:15672** (guest / guest)
 
-### Frontend Setup
+### Frontend Setup (local dev without Docker)
 
 ```bash
 cd frontend

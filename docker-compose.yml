@@ -93,6 +93,24 @@ services:
       - workout_network
 
   # ─────────────────────────────────────────────
+  # Vue 3 frontend (built with Vite, served by nginx)
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8080
+    container_name: workout_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"          # Access the frontend at http://localhost:5173
+    depends_on:
+      - nginx
+    networks:
+      - workout_network
+
+  # ─────────────────────────────────────────────
   # PostgreSQL 16 database
   # ─────────────────────────────────────────────
   database:
