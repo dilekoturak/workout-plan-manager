@@ -46,6 +46,10 @@ migrate: ## Run all pending database migrations
 fixtures: ## Load dev seed data (Alice, Bob, Carol + 3 plans)
 	$(DC) exec app php bin/console doctrine:fixtures:load --no-interaction
 
+setup: ## Run migrations and load seed data
+	$(DC) exec app php bin/console doctrine:migrations:migrate --no-interaction
+	$(DC) exec app php bin/console doctrine:fixtures:load --no-interaction
+
 cache-clear: ## Clear Symfony cache
 	$(DC) exec app php bin/console cache:clear
 
@@ -59,4 +63,4 @@ test: ## Run all PHPUnit tests
 test-filter: ## Run tests matching a filter — usage: make test-filter FILTER="UserApi"
 	$(DC) exec app php bin/phpunit --testdox --filter=$(FILTER)
 
-.PHONY: up down ps logs logs-app bash migrate fixtures cache-clear test test-filter
+.PHONY: up down ps logs logs-app bash migrate fixtures setup cache-clear test test-filter

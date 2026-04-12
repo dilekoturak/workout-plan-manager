@@ -71,13 +71,13 @@ All containers should show `Up` or `healthy`.
 
 ---
 
-## 4. Run Database Migrations
+## 4. Run Database Migrations & Load Sample Data
 
 ```bash
-make migrate
+make setup
 ```
 
-This creates all tables in the database.
+This runs the migrations (creates all tables) and loads seed data: 3 users (Alice, Bob, Carol) and 3 workout plans.
 
 ---
 
@@ -86,7 +86,6 @@ This creates all tables in the database.
 ```bash
 # API health check
 curl http://localhost:8080/api/workout-plans
-# Expected: []
 
 # Frontend
 open http://localhost:5173
@@ -98,17 +97,7 @@ open http://localhost:15672
 
 ---
 
-## 6. Load Sample Data (Optional)
-
-```bash
-make fixtures
-```
-
-This loads seed data: 3 users (Alice, Bob, Carol) and 3 workout plans.
-
----
-
-## 7. Using the App
+## 6. Using the App
 
 Open **http://localhost:5173** in your browser.
 
@@ -123,7 +112,7 @@ Open **http://localhost:5173** in your browser.
 
 ---
 
-## 8. Testing Email Notifications
+## 7. Testing Email Notifications
 
 Emails are sent asynchronously via RabbitMQ. To see them:
 
@@ -142,7 +131,7 @@ docker compose logs worker -f
 
 ---
 
-## 9. Running Tests
+## 8. Running Tests
 
 ```bash
 make test
@@ -158,7 +147,7 @@ make test-filter FILTER="UserApi"
 
 ---
 
-## 10. API Reference
+## 9. API Reference
 
 ### Users
 
@@ -226,8 +215,9 @@ make ps               # Show container status
 make logs             # Stream all logs
 make logs-app         # Stream PHP app logs only
 make bash             # Shell into the PHP container
-make migrate          # Run database migrations
-make fixtures         # Load sample data
+make setup            # Run migrations + load seed data
+make migrate          # Run migrations only
+make fixtures         # Load seed data only
 make test             # Run all PHPUnit tests
 make cache-clear      # Clear Symfony cache
 ```
