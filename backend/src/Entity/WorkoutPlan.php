@@ -86,9 +86,9 @@ class WorkoutPlan
         return $this->updatedAt;
     }
 
-    public function getWorkoutDays(): Collection
+    public function getWorkoutDays(): array
     {
-        return $this->workoutDays;
+        return array_values($this->workoutDays->toArray());
     }
 
     public function addWorkoutDay(WorkoutDay $day): static

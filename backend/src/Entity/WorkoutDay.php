@@ -71,9 +71,9 @@ class WorkoutDay
         return $this;
     }
 
-    public function getExercises(): Collection
+    public function getExercises(): array
     {
-        return $this->exercises;
+        return array_values($this->exercises->toArray());
     }
 
     public function addExercise(Exercise $exercise): static
