@@ -20,3 +20,4 @@ frontend/dist/
 frontend/.env.local
 
 # Backend — Symfony handles its own .gitignore inside backend/
+async-email-notifications.md
