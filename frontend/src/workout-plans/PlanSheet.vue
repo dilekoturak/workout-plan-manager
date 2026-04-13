@@ -54,7 +54,7 @@ const emptyForm = () => ({
   days: [{ name: '', exercises: [{ name: '', sets: '', reps: '', notes: '' }] }] as DayEntry[],
 })
 
-const { handleSubmit, errors, resetForm, defineField } = useForm({
+const { handleSubmit, errors, resetForm, defineField, submitCount } = useForm({
   validationSchema: toTypedSchema(planSchema),
   initialValues: emptyForm(),
 })
@@ -207,7 +207,7 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
             <div class="flex flex-col gap-1.5">
               <Label for="planName">Plan Name</Label>
               <Input id="planName" v-model="planName" v-bind="planNameAttrs" placeholder="e.g. Push Pull Legs" />
-              <p v-if="errors.planName" class="text-sm text-destructive">{{ errors.planName }}</p>
+              <p v-if="submitCount > 0 && errors.planName" class="text-sm text-destructive">{{ errors.planName }}</p>
             </div>
 
             <Separator />
@@ -220,7 +220,7 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
                   <Plus class="mr-1 h-3.5 w-3.5" /> Add Day
                 </Button>
               </div>
-              <p v-if="errors.days" class="text-sm text-destructive">{{ errors.days }}</p>
+              <p v-if="submitCount > 0 && errors.days" class="text-sm text-destructive">{{ errors.days }}</p>
 
               <div v-for="(day, di) in days" :key="day.key" class="rounded-lg border p-4 flex flex-col gap-4">
                 <!-- Day name -->
@@ -228,7 +228,7 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
                   <div class="flex-1 flex flex-col gap-1">
                     <Label :for="`day-${di}`">Day {{ di + 1 }} Name</Label>
                     <Input :id="`day-${di}`" v-model="day.value.name" placeholder="e.g. Monday / Push Day" />
-                    <p v-if="(errors as any)[`days[${di}].name`]" class="text-sm text-destructive">
+                    <p v-if="submitCount > 0 && (errors as any)[`days[${di}].name`]" class="text-sm text-destructive">
                       {{ (errors as any)[`days[${di}].name`] }}
                     </p>
                   </div>
@@ -263,7 +263,7 @@ const { mutate: unassignUser, isPending: isUnassigning } = useMutation({
 
                     <div class="flex flex-col gap-1">
                       <Input v-model="ex.name" placeholder="Exercise name *" />
-                      <p v-if="(errors as any)[`days[${di}].exercises[${ei}].name`]" class="text-xs text-destructive">
+                      <p v-if="submitCount > 0 && (errors as any)[`days[${di}].exercises[${ei}].name`]" class="text-xs text-destructive">
                         {{ (errors as any)[`days[${di}].exercises[${ei}].name`] }}
                       </p>
                     </div>
