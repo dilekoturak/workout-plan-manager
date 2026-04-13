@@ -117,8 +117,8 @@ cp .env.example .env
 # 3. Build and start all containers (backend + frontend + database + rabbitmq)
 make up
 
-# 4. Run database migrations
-make migrate
+# 4. Run database migrations and load sample data
+make setup
 ```
 
 - App (Frontend + API) → **http://localhost:8080**
