@@ -29,8 +29,8 @@ const activeTab = ref('plan')
 // ── Zod schema ──────────────────────────────────────────────
 const exerciseSchema = z.object({
   name: z.string().min(1, 'Exercise name is required.'),
-  sets: z.string().optional(),
-  reps: z.string().optional(),
+  sets: z.union([z.string(), z.number()]).optional(),
+  reps: z.union([z.string(), z.number()]).optional(),
   notes: z.string().optional(),
 })
 
@@ -49,8 +49,14 @@ type ExerciseEntry = { name: string; sets?: string; reps?: string; notes?: strin
 type DayEntry = { name: string; exercises: ExerciseEntry[] }
 
 // ── Form ────────────────────────────────────────────────────
+const emptyForm = () => ({
+  planName: '',
+  days: [{ name: '', exercises: [{ name: '', sets: '', reps: '', notes: '' }] }] as DayEntry[],
+})
+
 const { handleSubmit, errors, resetForm, defineField } = useForm({
   validationSchema: toTypedSchema(planSchema),
+  initialValues: emptyForm(),
 })
 
 const [planName, planNameAttrs] = defineField('planName')
@@ -87,12 +93,7 @@ function populateForm(p: WorkoutPlan | null | undefined) {
       },
     })
   } else {
-    resetForm({
-      values: {
-        planName: '',
-        days: [{ name: '', exercises: [{ name: '', sets: '', reps: '', notes: '' }] }],
-      },
-    })
+    resetForm({ values: emptyForm() })
   }
 }
 
@@ -120,8 +121,8 @@ const { mutate: savePlan, isPending } = useMutation({
         name: d.name.trim(),
         exercises: d.exercises.map(ex => ({
           name: ex.name.trim(),
-          sets: ex.sets ? parseInt(ex.sets) : null,
-          reps: ex.reps ? parseInt(ex.reps) : null,
+          sets: ex.sets !== undefined && ex.sets !== '' ? parseInt(String(ex.sets)) : null,
+          reps: ex.reps !== undefined && ex.reps !== '' ? parseInt(String(ex.reps)) : null,
           notes: ex.notes?.trim() || null,
         })),
       })),
