@@ -4,7 +4,6 @@ namespace App\DTO;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-// Represents a single exercise inside a workout day.
 class ExerciseDTO
 {
     #[Assert\NotBlank(message: 'Exercise name is required.')]

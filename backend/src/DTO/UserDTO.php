@@ -4,9 +4,6 @@ namespace App\DTO;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-// This DTO (Data Transfer Object) carries the data coming from the HTTP request body.
-// It acts as a firewall between the raw HTTP input and the domain layer.
-// Think of it like a .NET request model or input DTO with FluentValidation attributes.
 class UserDTO
 {
     #[Assert\NotBlank(message: 'First name is required.')]

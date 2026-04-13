@@ -27,7 +27,6 @@ class UserWorkoutPlan
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private WorkoutPlan $workoutPlan;
 
-    // Records when the user was assigned to this plan — useful for mail notifications and audit
     #[ORM\Column]
     private \DateTimeImmutable $assignedAt;
 

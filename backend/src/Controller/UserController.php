@@ -13,11 +13,6 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-// The controller is responsible for HTTP only:
-//   1. Parse and validate the request
-//   2. Call the appropriate service method
-//   3. Return a JSON response
-// No business logic lives here — that belongs to UserService.
 #[Route('/api/users', name: 'api_users_')]
 class UserController extends AbstractController
 {
@@ -53,7 +48,7 @@ class UserController extends AbstractController
         $dto = $this->deserializeAndValidate($request);
 
         if ($dto instanceof JsonResponse) {
-            return $dto; // validation error response
+            return $dto;
         }
 
         try {
@@ -71,7 +66,7 @@ class UserController extends AbstractController
         $dto = $this->deserializeAndValidate($request);
 
         if ($dto instanceof JsonResponse) {
-            return $dto; // validation error response
+            return $dto;
         }
 
         try {
@@ -99,8 +94,6 @@ class UserController extends AbstractController
 
     // ─── Private helpers ────────────────────────────────────────────────────
 
-    // Deserializes the JSON request body into a UserDTO and validates it.
-    // Returns the DTO on success, or a 400/422 JsonResponse on failure.
     private function deserializeAndValidate(Request $request): UserDTO|JsonResponse
     {
         $data = json_decode($request->getContent(), true);

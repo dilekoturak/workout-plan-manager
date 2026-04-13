@@ -9,9 +9,6 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Mime\Email;
 
-// This handler is automatically picked up by Symfony Messenger via the #[AsMessageHandler] attribute.
-// It runs inside the worker container — completely decoupled from the HTTP request.
-// Think of it like an INotificationHandler<UserAssignedMessage> in .NET MediatR.
 #[AsMessageHandler]
 final class UserAssignedHandler
 {
@@ -26,7 +23,6 @@ final class UserAssignedHandler
         $user = $this->userRepository->find($message->userId);
         $plan = $this->workoutPlanRepository->find($message->planId);
 
-        // If either was deleted before the worker processed the message, skip silently
         if ($user === null || $plan === null) {
             return;
         }

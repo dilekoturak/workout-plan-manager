@@ -47,7 +47,6 @@ class User
     #[Groups(['user:read'])]
     private \DateTimeImmutable $updatedAt;
 
-    // One user can have many plan assignments
     #[ORM\OneToMany(targetEntity: UserWorkoutPlan::class, mappedBy: 'user', cascade: ['remove'])]
     private Collection $userWorkoutPlans;
 

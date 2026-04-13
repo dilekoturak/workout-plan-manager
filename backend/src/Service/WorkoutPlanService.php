@@ -73,20 +73,15 @@ class WorkoutPlanService
         return $plan;
     }
 
-    // On update: replace all days and exercises with the new ones from the DTO.
-    // orphanRemoval=true on the collections handles deleting the old records automatically.
-    // After saving, all assigned users must be notified — mail step will hook in here later.
     public function update(string $id, WorkoutPlanDTO $dto): WorkoutPlan
     {
         $plan = $this->findOne($id);
         $plan->setName($dto->name);
 
-        // Remove all existing days (orphanRemoval cascades to exercises)
         foreach ($plan->getWorkoutDays() as $existingDay) {
             $plan->removeWorkoutDay($existingDay);
         }
 
-        // Add the new set of days and exercises from the DTO
         foreach ($dto->days as $dayDTO) {
             $day = new WorkoutDay();
             $day->setName($dayDTO->name);
@@ -111,12 +106,9 @@ class WorkoutPlanService
         return $plan;
     }
 
-    // On delete: collect assigned user emails before removing, then notify them asynchronously.
     public function delete(string $id): void
     {
         $plan = $this->findOne($id);
-
-        // Collect emails before deletion — the plan won't exist when the worker runs
         $assignments = $this->userWorkoutPlanRepository->findByWorkoutPlan($plan);
         $userEmails  = array_map(
             fn(UserWorkoutPlan $a) => $a->getUser()->getEmail(),
@@ -134,8 +126,6 @@ class WorkoutPlanService
         }
     }
 
-    // Assigns a user to a plan. Throws if already assigned.
-    // After assigning, the user must receive a confirmation email — mail step hooks in here.
     public function assignUser(string $planId, string $userId): UserWorkoutPlan
     {
         $plan = $this->findOne($planId);
@@ -163,7 +153,6 @@ class WorkoutPlanService
         return $assignment;
     }
 
-    // Returns all users assigned to a given plan.
     /** @return UserWorkoutPlan[] */
     public function getAssignedUsers(string $planId): array
     {
@@ -171,7 +160,6 @@ class WorkoutPlanService
         return $this->userWorkoutPlanRepository->findByWorkoutPlan($plan);
     }
 
-    // Removes a user assignment from a plan.
     public function unassignUser(string $planId, string $userId): void
     {
         $plan = $this->findOne($planId);

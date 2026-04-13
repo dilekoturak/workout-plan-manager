@@ -26,7 +26,6 @@ final class PlanModifiedHandler
             return;
         }
 
-        // Fetch all users currently assigned to this plan
         $assignments = $this->userWorkoutPlanRepository->findByWorkoutPlan($plan);
 
         foreach ($assignments as $assignment) {

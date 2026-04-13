@@ -4,8 +4,6 @@ namespace App\DTO;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-// Top-level DTO for creating or updating a workout plan.
-// Days and exercises are nested inside — the whole plan is submitted in one request.
 class WorkoutPlanDTO
 {
     #[Assert\NotBlank(message: 'Plan name is required.')]

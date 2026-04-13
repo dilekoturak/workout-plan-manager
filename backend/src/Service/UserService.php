@@ -8,9 +8,6 @@ use App\Exception\UserNotFoundException;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
-// UserService contains all business logic related to users.
-// The controller never touches the EntityManager or Repository directly — it only calls this service.
-// Think of this as the equivalent of a .NET service class injected into a controller.
 class UserService
 {
     public function __construct(
@@ -55,9 +52,8 @@ class UserService
     public function update(string $id, UserDTO $dto): User
     {
         $user = $this->findOne($id);
-
-        // Allow keeping the same email, but reject if another user already owns the new email
         $existingWithEmail = $this->userRepository->findByEmail($dto->email);
+
         if ($existingWithEmail !== null && $existingWithEmail->getId() !== $user->getId()) {
             throw new \DomainException(sprintf('A user with email "%s" already exists.', $dto->email));
         }

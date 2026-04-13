@@ -143,7 +143,6 @@ class WorkoutPlanController extends AbstractController
 
     // ─── Private helpers ────────────────────────────────────────────────────
 
-    // Parses the JSON body and builds nested DTOs: WorkoutPlanDTO → WorkoutDayDTO[] → ExerciseDTO[]
     private function deserializeAndValidate(Request $request): WorkoutPlanDTO|JsonResponse
     {
         $data = json_decode($request->getContent(), true);

@@ -35,12 +35,10 @@ class WorkoutPlan
     #[Groups(['workout_plan:read'])]
     private \DateTimeImmutable $updatedAt;
 
-    // A plan is composed of multiple days (e.g. Monday, Wednesday, Friday)
     #[ORM\OneToMany(targetEntity: WorkoutDay::class, mappedBy: 'workoutPlan', cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[Groups(['workout_plan:read'])]
     private Collection $workoutDays;
 
-    // Tracks which users are assigned to this plan
     #[ORM\OneToMany(targetEntity: UserWorkoutPlan::class, mappedBy: 'workoutPlan', cascade: ['remove'])]
     private Collection $userWorkoutPlans;
 
