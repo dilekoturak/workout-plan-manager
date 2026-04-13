@@ -121,8 +121,7 @@ make up
 make migrate
 ```
 
-- API → **http://localhost:8080**
-- Frontend → **http://localhost:5173**
+- App (Frontend + API) → **http://localhost:8080**
 - RabbitMQ UI → **http://localhost:15672** (guest / guest)
 
 ### Frontend Setup (local dev without Docker)
@@ -133,7 +132,7 @@ npm install
 npm run dev
 ```
 
-The frontend will be available at **http://localhost:5173**.
+The frontend will be available at **http://localhost:5173** (dev only, not proxied through nginx).
 
 ### Useful Commands
 
