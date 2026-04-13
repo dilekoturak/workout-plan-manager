@@ -7,6 +7,8 @@ use App\Entity\Exercise;
 use App\Entity\UserWorkoutPlan;
 use App\Entity\WorkoutDay;
 use App\Entity\WorkoutPlan;
+use App\Exception\ConflictException;
+use App\Exception\NotFoundException;
 use App\Message\PlanDeletedMessage;
 use App\Message\PlanModifiedMessage;
 use App\Message\UserAssignedMessage;
@@ -37,7 +39,7 @@ class WorkoutPlanService
         $plan = $this->workoutPlanRepository->findWithDaysAndExercises($id);
 
         if ($plan === null) {
-            throw new \RuntimeException(sprintf('Workout plan with ID "%s" was not found.', $id), 404);
+            throw new NotFoundException('WorkoutPlan', $id);
         }
 
         return $plan;
@@ -129,12 +131,12 @@ class WorkoutPlanService
 
         $user = $this->userRepository->find($userId);
         if ($user === null) {
-            throw new \RuntimeException(sprintf('User with ID "%s" was not found.', $userId), 404);
+            throw new NotFoundException('User', $userId);
         }
 
         $existing = $this->userWorkoutPlanRepository->findByUserAndPlan($user, $plan);
         if ($existing !== null) {
-            throw new \RuntimeException(sprintf('User "%s" is already assigned to workout plan "%s".', $userId, $planId), 409);
+            throw new ConflictException('UserWorkoutPlan', 'userId/planId', "$userId/$planId");
         }
 
         $assignment = new UserWorkoutPlan();
@@ -163,12 +165,12 @@ class WorkoutPlanService
 
         $user = $this->userRepository->find($userId);
         if ($user === null) {
-            throw new \RuntimeException(sprintf('User with ID "%s" was not found.', $userId), 404);
+            throw new NotFoundException('User', $userId);
         }
 
         $assignment = $this->userWorkoutPlanRepository->findByUserAndPlan($user, $plan);
         if ($assignment === null) {
-            throw new \RuntimeException(sprintf('User "%s" is not assigned to workout plan "%s".', $userId, $planId), 404);
+            throw new NotFoundException('Assignment', "$userId/$planId");
         }
 
         $this->entityManager->remove($assignment);

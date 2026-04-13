@@ -2,6 +2,8 @@
 
 namespace App\EventListener;
 
+use App\Exception\ConflictException;
+use App\Exception\NotFoundException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,7 +23,7 @@ class ExceptionListener
     {
         $exception = $event->getThrowable();
 
-        // 422 — #[MapRequestPayload] validation hatası
+        // 422 — #[MapRequestPayload] validation error
         $previous = $exception->getPrevious();
         if ($previous instanceof ValidationFailedException) {
             $errors = [];
@@ -32,16 +34,19 @@ class ExceptionListener
             return;
         }
 
-        // Domain exception'ları — exception code'u HTTP status olarak kullan (404, 409, vs.)
-        if ($exception instanceof \RuntimeException) {
-            $code = $exception->getCode();
-            if (in_array($code, [400, 403, 404, 409, 422], strict: true)) {
-                $event->setResponse(new JsonResponse(['error' => $exception->getMessage()], $code));
-                return;
-            }
+        // Domain exceptions
+        $statusCode = match (true) {
+            $exception instanceof NotFoundException => Response::HTTP_NOT_FOUND,
+            $exception instanceof ConflictException => Response::HTTP_CONFLICT,
+            default                                 => null,
+        };
+
+        if ($statusCode !== null) {
+            $event->setResponse(new JsonResponse(['error' => $exception->getMessage()], $statusCode));
+            return;
         }
 
-        // Symfony HTTP exception'ları (404 route not found, 405 method not allowed, vs.)
+        // Symfony HTTP exceptions (404 route not found, 405 method not allowed, etc.)
         if ($exception instanceof HttpExceptionInterface) {
             $event->setResponse(new JsonResponse(
                 ['error' => $exception->getMessage()],
@@ -50,7 +55,7 @@ class ExceptionListener
             return;
         }
 
-        // 500 — beklenmeyen hatalar, logla ama response set etme (Symfony default error handler devreye girer)
+        // 500 — unexpected errors, log but do not set response (Symfony default error handler will take over)
         $this->logger->error($exception->getMessage(), ['exception' => $exception]);
     }
 }

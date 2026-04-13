@@ -24,24 +24,20 @@ class Exercise
     #[Groups(['workout_plan:read'])]
     private string $name;
 
-    // Number of sets — e.g. 3
     #[ORM\Column(nullable: true)]
     #[Assert\PositiveOrZero]
     #[Groups(['workout_plan:read'])]
     private ?int $sets = null;
 
-    // Number of repetitions per set — e.g. 10
     #[ORM\Column(nullable: true)]
     #[Assert\PositiveOrZero]
     #[Groups(['workout_plan:read'])]
     private ?int $reps = null;
 
-    // Optional free-text notes — e.g. "Keep back straight", "Use 20kg"
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['workout_plan:read'])]
     private ?string $notes = null;
 
-    // The day this exercise is scheduled on
     #[ORM\ManyToOne(targetEntity: WorkoutDay::class, inversedBy: 'exercises')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private WorkoutDay $workoutDay;
