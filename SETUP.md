@@ -49,13 +49,13 @@ MAILER_DSN=smtp://USER:PASS@sandbox.smtp.mailtrap.io:2525
 make up
 ```
 
-This builds and starts 6 containers:
+This builds and starts 7 containers:
 
 | Container | What it does | URL |
 |---|---|---|
 | `workout_app` | PHP-FPM (Symfony backend) | — |
-| `workout_nginx` | Nginx reverse proxy (API) | http://localhost:8080 |
-| `workout_frontend` | Vue 3 SPA (nginx) | http://localhost:5173 |
+| `workout_nginx` | Nginx — single entry point (API + frontend) | http://localhost:8080 |
+| `workout_frontend` | Vue 3 SPA (nginx, internal only) | — |
 | `workout_db` | PostgreSQL 16 | localhost:5432 |
 | `workout_db_test` | PostgreSQL 16 (test only) | localhost:5433 |
 | `workout_rabbitmq` | RabbitMQ message broker | http://localhost:15672 |
@@ -87,8 +87,8 @@ This runs the migrations (creates all tables) and loads seed data: 3 users (Alic
 # API health check
 curl http://localhost:8080/api/workout-plans
 
-# Frontend
-open http://localhost:5173
+# Frontend + API (same port)
+open http://localhost:8080
 
 # RabbitMQ management UI
 open http://localhost:15672
@@ -99,7 +99,7 @@ open http://localhost:15672
 
 ## 6. Using the App
 
-Open **http://localhost:5173** in your browser.
+Open **http://localhost:8080** in your browser.
 
 **Users page** (`/users`):
 - Create, edit, delete users
