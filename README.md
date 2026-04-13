@@ -85,16 +85,6 @@ backend/
     ├── DTO/            # Data Transfer Objects — shape incoming requests and outgoing responses
     └── Exception/      # Custom domain exceptions — meaningful error handling
 ```
-
-### Layer Responsibilities
-
-- **Controller** → Validates HTTP input, calls the appropriate Service, returns a JSON response. Contains **zero** business logic.
-- **Service** → Executes business logic, uses Repositories for data access, throws domain Exceptions.
-- **Entity** → Plain PHP class annotated with Doctrine attributes. Represents a database row. No business logic.
-- **Repository** → Extends Doctrine's `ServiceEntityRepository`. Provides typed query methods (`findByUserId`, etc.).
-- **DTO** → Simple objects used to transfer data between layers. Keeps Entities decoupled from the HTTP layer.
-- **Exception** → Domain-specific exceptions (e.g., `WorkoutPlanNotFoundException`) for clean error handling.
-
 ---
 
 ## Getting Started
