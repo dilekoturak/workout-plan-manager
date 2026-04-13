@@ -99,6 +99,8 @@ backend/
 
 ## Getting Started
 
+To easily set up and run the project, you can follow the instructions in the [SETUP.md](./SETUP.md) file.
+
 ### Prerequisites
 
 - Docker & Docker Compose
