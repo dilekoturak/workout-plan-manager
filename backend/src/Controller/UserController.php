@@ -3,23 +3,18 @@
 namespace App\Controller;
 
 use App\DTO\UserDTO;
-use App\Exception\UserNotFoundException;
 use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/users', name: 'api_users_')]
 class UserController extends AbstractController
 {
     public function __construct(
-        private readonly UserService         $userService,
-        private readonly SerializerInterface $serializer,
-        private readonly ValidatorInterface  $validator,
+        private readonly UserService $userService,
     ) {}
 
     #[Route('', name: 'list', methods: ['GET'])]
@@ -33,49 +28,23 @@ class UserController extends AbstractController
     #[Route('/{id}', name: 'show', methods: ['GET'])]
     public function show(string $id): JsonResponse
     {
-        try {
-            $user = $this->userService->findOne($id);
-        } catch (UserNotFoundException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
-        }
+        $user = $this->userService->findOne($id);
 
         return $this->json($user, Response::HTTP_OK, [], ['groups' => ['user:read']]);
     }
 
     #[Route('', name: 'create', methods: ['POST'])]
-    public function create(Request $request): JsonResponse
+    public function create(#[MapRequestPayload] UserDTO $dto): JsonResponse
     {
-        $dto = $this->deserializeAndValidate($request);
-
-        if ($dto instanceof JsonResponse) {
-            return $dto;
-        }
-
-        try {
-            $user = $this->userService->create($dto);
-        } catch (\DomainException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
-        }
+        $user = $this->userService->create($dto);
 
         return $this->json($user, Response::HTTP_CREATED, [], ['groups' => ['user:read']]);
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
-    public function update(string $id, Request $request): JsonResponse
+    public function update(string $id, #[MapRequestPayload] UserDTO $dto): JsonResponse
     {
-        $dto = $this->deserializeAndValidate($request);
-
-        if ($dto instanceof JsonResponse) {
-            return $dto;
-        }
-
-        try {
-            $user = $this->userService->update($id, $dto);
-        } catch (UserNotFoundException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
-        } catch (\DomainException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
-        }
+        $user = $this->userService->update($id, $dto);
 
         return $this->json($user, Response::HTTP_OK, [], ['groups' => ['user:read']]);
     }
@@ -83,41 +52,8 @@ class UserController extends AbstractController
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
     public function delete(string $id): JsonResponse
     {
-        try {
-            $this->userService->delete($id);
-        } catch (UserNotFoundException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
-        }
+        $this->userService->delete($id);
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
-    }
-
-    // ─── Private helpers ────────────────────────────────────────────────────
-
-    private function deserializeAndValidate(Request $request): UserDTO|JsonResponse
-    {
-        $data = json_decode($request->getContent(), true);
-
-        if (!is_array($data)) {
-            return $this->json(['error' => 'Invalid JSON body.'], Response::HTTP_BAD_REQUEST);
-        }
-
-        $dto = new UserDTO(
-            firstName: $data['firstName'] ?? '',
-            lastName:  $data['lastName']  ?? '',
-            email:     $data['email']     ?? '',
-        );
-
-        $violations = $this->validator->validate($dto);
-
-        if (count($violations) > 0) {
-            $errors = [];
-            foreach ($violations as $violation) {
-                $errors[$violation->getPropertyPath()] = $violation->getMessage();
-            }
-            return $this->json(['errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-
-        return $dto;
     }
 }

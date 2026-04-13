@@ -4,7 +4,6 @@ namespace App\Service;
 
 use App\DTO\UserDTO;
 use App\Entity\User;
-use App\Exception\UserNotFoundException;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -26,7 +25,7 @@ class UserService
         $user = $this->userRepository->find($id);
 
         if ($user === null) {
-            throw new UserNotFoundException($id);
+            throw new \RuntimeException(sprintf('User with ID "%s" was not found.', $id), 404);
         }
 
         return $user;
@@ -35,7 +34,7 @@ class UserService
     public function create(UserDTO $dto): User
     {
         if ($this->userRepository->findByEmail($dto->email) !== null) {
-            throw new \DomainException(sprintf('A user with email "%s" already exists.', $dto->email));
+            throw new \RuntimeException(sprintf('A user with email "%s" already exists.', $dto->email), 409);
         }
 
         $user = new User();
@@ -55,7 +54,7 @@ class UserService
         $existingWithEmail = $this->userRepository->findByEmail($dto->email);
 
         if ($existingWithEmail !== null && $existingWithEmail->getId() !== $user->getId()) {
-            throw new \DomainException(sprintf('A user with email "%s" already exists.', $dto->email));
+            throw new \RuntimeException(sprintf('A user with email "%s" already exists.', $dto->email), 409);
         }
 
         $user->setFirstName($dto->firstName);

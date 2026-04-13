@@ -7,9 +7,6 @@ use App\Entity\Exercise;
 use App\Entity\UserWorkoutPlan;
 use App\Entity\WorkoutDay;
 use App\Entity\WorkoutPlan;
-use App\Exception\UserAlreadyAssignedException;
-use App\Exception\UserNotFoundException;
-use App\Exception\WorkoutPlanNotFoundException;
 use App\Message\PlanDeletedMessage;
 use App\Message\PlanModifiedMessage;
 use App\Message\UserAssignedMessage;
@@ -40,7 +37,7 @@ class WorkoutPlanService
         $plan = $this->workoutPlanRepository->findWithDaysAndExercises($id);
 
         if ($plan === null) {
-            throw new WorkoutPlanNotFoundException($id);
+            throw new \RuntimeException(sprintf('Workout plan with ID "%s" was not found.', $id), 404);
         }
 
         return $plan;
@@ -132,12 +129,12 @@ class WorkoutPlanService
 
         $user = $this->userRepository->find($userId);
         if ($user === null) {
-            throw new UserNotFoundException($userId);
+            throw new \RuntimeException(sprintf('User with ID "%s" was not found.', $userId), 404);
         }
 
         $existing = $this->userWorkoutPlanRepository->findByUserAndPlan($user, $plan);
         if ($existing !== null) {
-            throw new UserAlreadyAssignedException($userId, $planId);
+            throw new \RuntimeException(sprintf('User "%s" is already assigned to workout plan "%s".', $userId, $planId), 409);
         }
 
         $assignment = new UserWorkoutPlan();
@@ -166,16 +163,12 @@ class WorkoutPlanService
 
         $user = $this->userRepository->find($userId);
         if ($user === null) {
-            throw new UserNotFoundException($userId);
+            throw new \RuntimeException(sprintf('User with ID "%s" was not found.', $userId), 404);
         }
 
         $assignment = $this->userWorkoutPlanRepository->findByUserAndPlan($user, $plan);
         if ($assignment === null) {
-            throw new \DomainException(sprintf(
-                'User "%s" is not assigned to workout plan "%s".',
-                $userId,
-                $planId
-            ));
+            throw new \RuntimeException(sprintf('User "%s" is not assigned to workout plan "%s".', $userId, $planId), 404);
         }
 
         $this->entityManager->remove($assignment);
