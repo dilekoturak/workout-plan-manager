@@ -12,6 +12,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend:/app
+      - backend_vendor:/app/vendor
     environment:
       APP_ENV: dev
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?serverVersion=16&charset=utf8
@@ -41,6 +42,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend:/app
+      - backend_vendor:/app/vendor
     environment:
       APP_ENV: dev
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?serverVersion=16&charset=utf8
@@ -163,6 +165,7 @@ services:
 volumes:
   db_data:
   db_test_data:
+  backend_vendor:
 
 networks:
   workout_network:
